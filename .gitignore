@@ -1,5 +1,4 @@
 *.pyc
-**/*.pyc
 .idea
 .DS_STORE
 env

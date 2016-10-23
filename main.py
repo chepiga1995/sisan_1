@@ -1,85 +1,175 @@
+__author__ = 'vlad'
+# coding: utf8
 
 import sys
-from PyQt5.QtGui import *
-from PyQt5.uic import loadUi
-from PyQt5.QtCore import pyqtSignal, Qt
-from PyQt5.QtWidgets import QMainWindow, QFileDialog, QApplication, QAction
-from numpy import array, transpose, dot, matrix
-from numpy.linalg import inv, lstsq
-from matplotlib.pyplot import show, plot
 
-from DataContainer import *
-from Compute import *
+from PyQt5.QtCore import pyqtSlot, pyqtSignal
+from PyQt5.QtGui import QTextDocument, QFont
+from PyQt5.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox
+from PyQt5.uic import loadUiType
 
-class App(QMainWindow):
-    def __init__(self):
-        QMainWindow.__init__(self)
-        self.ui = loadUi('mainwindow.ui')
-        self.ui.openInputFile.clicked.connect(self.openInputFileClicked)
-        self.ui.compute.clicked.connect(self.compute)
-        self.ui.plotGraph.clicked.connect(self.plotGraphic)
+from presentation import PolynomialBuilder
+from solve import Solve
 
-    def openInputFileClicked(self):
-        filename = QFileDialog.getOpenFileName(self, "Input file", "")
-        self.ui.inputFile.setText(filename)
+app = QApplication(sys.argv)
+app.setApplicationName('lab2_sa')
+form_class, base_class = loadUiType('main_window.ui')
 
-    def compute(self):
-        # read configuration data
-        Dim_x1 = int(self.ui.DimX1.text())
-        Dim_x2 = int(self.ui.DimX2.text())
-        Dim_x3 = int(self.ui.DimX3.text())
-        Dim_y = int(self.ui.DimY.text())
-        selection_range = int(self.ui.lineEdit_10.text())
 
-        inputfile = self.ui.inputFile.text()
+class MainWindow(QDialog, form_class):
+    # signals:
+    input_changed = pyqtSignal('QString')
+    output_changed = pyqtSignal('QString')
 
-        pol_pow_x1 = int(self.ui.PolX1.text())
-        pol_pow_x2 = int(self.ui.PolX2.text())
-        pol_pow_x3 = int(self.ui.PolX3.text())
+    def __init__(self, *args):
+        super(MainWindow, self).__init__(*args)
 
-        bq0AsAvg = self.ui.b0AsAvg.isChecked()
-        lambda_separate = self.ui.oneLambda.isChecked()
+        # setting up ui
+        self.setupUi(self)
 
-        if self.ui.chebish.isChecked():
-            polynom_type = "cheb_value_in_point"
-        elif self.ui.lagger.isChecked():
-            polynom_type = "Lag_value_in_point"
-        elif self.ui.ermit.isChecked():
-            polynom_type = "Ermit_value_in_point"
-        elif self.ui.legandr.isChecked():
-            polynom_type = "Lejan_value_in_point"
+        # other initializations
+        self.dimensions = [self.x1_dim.value(), self.x2_dim.value(),
+                                    self.x3_dim.value(), self.y_dim.value()]
+        self.degrees = [self.x1_deg.value(), self.x2_deg.value(), self.x3_deg.value()]
+        self.type = 'null'
+        if self.radio_cheb.isChecked():
+            self.type = 'chebyshev'
+        elif self.radio_legend.isChecked():
+            self.type = 'legendre'
+        elif self.radio_lagg.isChecked():
+            self.type = 'laguerre'
+        elif self.radio_herm.isChecked():
+            self.type = 'hermit'
+        self.input_path = ''
+        self.output_path = ''
+        self.samples_num = self.sample_spin.value()
+        self.lambda_multiblock = self.lambda_check.isChecked()
+        self.weight_method = self.weights_box.currentText().lower()
+        self.solution = None
+        doc = self.results_field.document()
+        assert isinstance(doc, QTextDocument)
+        font = doc.defaultFont()
+        assert isinstance(font, QFont)
+        font.setFamily('Courier New')
+        font.setPixelSize(12)
+        doc.setDefaultFont(font)
+        return
 
-        self.ui.plotFunc.clear()
-        self.ui.plotFunc.addItems(["Y" + str(i) for i in range(0, Dim_y)])
+    @pyqtSlot()
+    def input_clicked(self):
+        filename = QFileDialog.getOpenFileName(self, 'Open data file', '.', 'Data file (*.txt *.dat)')[0]
+        if filename == '':
+            return
+        if filename != self.input_path:
+            self.input_path = filename
+            self.input_changed.emit(filename)
+        return
 
-        # read data from input
-        self.data = DataContainer(inputfile, Dim_x1, Dim_x2, Dim_x3, Dim_y, selection_range)
-        if self.data.ERROR:
-            exit(1)
+    @pyqtSlot('QString')
+    def input_modified(self, value):
+        if value != self.input_path:
+            self.input_path = value
+        return
 
-        result = []
-        result.append(self.data.data_x1)
-        result.append(self.data.data_x2)
-        result.append(self.data.data_x3)
-        result.append(self.data.data_y)
+    @pyqtSlot()
+    def output_clicked(self):
+        filename = QFileDialog.getSaveFileName(self, 'Save data file', '.', 'Spreadsheet (*.xlsx)')[0]
+        if filename == '':
+            return
+        if filename != self.output_path:
+            self.output_path = filename
+            self.output_changed.emit(filename)
+        return
 
-        self.computation = Compute(self.data, polynom_type, pol_pow_x1, pol_pow_x2, pol_pow_x3, bq0AsAvg, lambda_separate)
-        # self.computation = Computation(polynom_type, pol_pow_x1, pol_pow_x2, pol_pow_x3, bq0AsAvg=bq0AsAvg, lambdaInOneSystem=lambda_separate) # should changed
+    @pyqtSlot('QString')
+    def output_modified(self, value):
+        if value != self.output_path:
+            self.output_path = value
+        return
 
-        # output data
-        #results = self.computation.formOutput()
-        self.ui.output.setText(str(result))
-        #file = open(self.ui.outputFile.text(), "w+")
-        #file.write(results)
-        #file.close()
+    @pyqtSlot(int)
+    def samples_modified(self, value):
+        self.samples_num = value
+        return
 
-# should be changed
-    def plotGraphic(self):
-        var_num = self.ui.plotFunc.currentIndex()
-        self.computation.plotVar(var_num)
+    @pyqtSlot(int)
+    def dimension_modified(self, value):
+        sender = self.sender().objectName()
+        if sender == 'x1_dim':
+            self.dimensions[0] = value
+        elif sender == 'x2_dim':
+            self.dimensions[1] = value
+        elif sender == 'x3_dim':
+            self.dimensions[2] = value
+        elif sender == 'y_dim':
+            self.dimensions[3] = value
+        return
 
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    win = App()
-    win.ui.show()
-    sys.exit(app.exec_())
+    @pyqtSlot(int)
+    def degree_modified(self, value):
+        sender = self.sender().objectName()
+        if sender == 'x1_deg':
+            self.degrees[0] = value
+        elif sender == 'x2_deg':
+            self.degrees[1] = value
+        elif sender == 'x3_deg':
+            self.degrees[2] = value
+        return
+
+    @pyqtSlot(bool)
+    def type_modified(self, isdown):
+        if (isdown):
+            sender = self.sender().objectName()
+            if sender == 'radio_cheb':
+                self.type = 'chebyshev'
+            elif sender == 'radio_legend':
+                self.type = 'legendre'
+            elif sender == 'radio_lagg':
+                self.type = 'laguerre'
+            elif sender == 'radio_herm':
+                self.type = 'hermit'
+        return
+
+    @pyqtSlot()
+    def plot_clicked(self):
+        if self.solution:
+            try:
+                self.solution.plot_graphs()
+            except Exception as e:
+                QMessageBox.warning(self,'Error!','Error happened during plotting: ' + str(e))
+        return
+
+    @pyqtSlot()
+    def exec_clicked(self):
+        self.exec_button.setEnabled(False)
+        try:
+            solver = Solve(self.__get_params())
+            solver.prepare()
+            self.solution = PolynomialBuilder(solver)
+            self.results_field.setText(solver.show()+'\n\n'+self.solution.get_results())
+        except Exception as e:
+            QMessageBox.warning(self,'Error!','Error happened during execution: ' + str(e))
+        self.exec_button.setEnabled(True)
+        return
+
+    @pyqtSlot(bool)
+    def lambda_calc_method_changed(self, isdown):
+        self.lambda_multiblock = isdown
+        return
+
+    @pyqtSlot('QString')
+    def weights_modified(self, value):
+        self.weight_method = value.lower()
+        return
+
+    def __get_params(self):
+        return dict(poly_type=self.type, degrees=self.degrees, dimensions=self.dimensions,
+                    samples=self.samples_num, input_file=self.input_path, output_file=self.output_path,
+                    weights=self.weight_method, lambda_multiblock=self.lambda_multiblock)
+
+
+# -----------------------------------------------------#
+form = MainWindow()
+form.setWindowTitle('System Analysis - Lab 2')
+form.show()
+sys.exit(app.exec_())
