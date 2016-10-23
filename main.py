@@ -1,9 +1,9 @@
-__author__ = 'craig'
 
 import sys
-from PyQt4.QtGui import *
-from PyQt4.uic import loadUi
-from PyQt4.QtCore import SIGNAL, Qt
+from PyQt5.QtGui import *
+from PyQt5.uic import loadUi
+from PyQt5.QtCore import pyqtSignal, Qt
+from PyQt5.QtWidgets import QMainWindow, QFileDialog, QApplication, QAction
 from numpy import array, transpose, dot, matrix
 from numpy.linalg import inv, lstsq
 from matplotlib.pyplot import show, plot
@@ -15,9 +15,9 @@ class App(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
         self.ui = loadUi('mainwindow.ui')
-        self.connect(self.ui.openInputFile, SIGNAL("clicked()"), self.openInputFileClicked)
-        self.connect(self.ui.compute, SIGNAL("clicked()"), self.compute)
-        self.connect(self.ui.plotGraph, SIGNAL("clicked()"), self.plotGraphic)
+        self.ui.openInputFile.clicked.connect(self.openInputFileClicked)
+        self.ui.compute.clicked.connect(self.compute)
+        self.ui.plotGraph.clicked.connect(self.plotGraphic)
 
     def openInputFileClicked(self):
         filename = QFileDialog.getOpenFileName(self, "Input file", "")
@@ -63,7 +63,7 @@ class App(QMainWindow):
         result.append(self.data.data_x3)
         result.append(self.data.data_y)
 
-        self.program = Compute(self.data, polynom_type, pol_pow_x1, pol_pow_x2, pol_pow_x3, bq0AsAvg, lambda_separate)
+        self.computation = Compute(self.data, polynom_type, pol_pow_x1, pol_pow_x2, pol_pow_x3, bq0AsAvg, lambda_separate)
         # self.computation = Computation(polynom_type, pol_pow_x1, pol_pow_x2, pol_pow_x3, bq0AsAvg=bq0AsAvg, lambdaInOneSystem=lambda_separate) # should changed
 
         # output data

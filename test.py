@@ -13,10 +13,10 @@ a = array(a)
 A = scipy.sparse.csc_matrix(a)
 x, er = scipy.sparse.linalg.cg(A, b)
 
-print A
+print(A)
 
-print x
-print er
+print(x)
+print(er)
 
 a = [[1, 2, 3],
      [4, 5, 6]]
@@ -24,29 +24,29 @@ b = [9, 9, 9]
 
 c = list(map(list, zip(a, b)))
 for x, y in c:
-    print x
-    print y
+    print(x)
+    print(y)
 
 x1 = [[1, 1, 1],
       [1, 1, 1]]
 x2 = [[2, 2],
       [2, 2]]
 
-print x1 + x2
+print(x1 + x2)
 
 o = array([[-1, 1],
      [1, -1]]).transpose()
 r = array([[2],
            [1]])
 s = dot(o, r)
-print type(s)
-print o.transpose()
+print(type(s))
+print(o.transpose())
 
 l1 = [[1, 2, 3], [1, 2, 3]]
 
-print "l1="
-print l1[1][2]
-print array(l1).shape[0]
+print("l1=")
+print(l1[1][2])
+print(array(l1).shape[0])
 
 
 a1 = array([[1, 2, 3],
