@@ -123,7 +123,7 @@ class Solve(object):
         if type == 'lsq':
             return np.linalg.lstsq(A,b)[0]
         elif type == 'cjg':
-            return conjugate_gradient_method(A.T*A, A.T*b, self.eps)
+            return gradient_descent(A.T*A, A.T*b, self.eps)
 
     def norm_data(self):
         '''
@@ -318,7 +318,7 @@ class Solve(object):
     def built_c(self):
         self.c = np.ndarray(shape = (len(self.X),0),dtype = float)
         for i in range(self.deg[3]):
-            self.c = np.append(self.c, conjugate_gradient_method(self.Fi[i].T*self.Fi[i], self.Fi[i].T*self.Y[:,i],self.eps),\
+            self.c = np.append(self.c, gradient_descent(self.Fi[i].T*self.Fi[i], self.Fi[i].T*self.Y[:,i],self.eps),\
                           axis = 1)
 
     def built_F(self):
