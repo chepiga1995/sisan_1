@@ -5,7 +5,7 @@ def gradient_descent(A, b, eps):
     m = len(A.T)
     x = np.zeros(shape=(m,1))
     i = 0
-    imax = 10000
+    imax = 100000
     r = b - A * x
     delta = r.T * r
     delta0 = delta

@@ -135,7 +135,10 @@ class Solve(object):
             minv = np.min(self.datas[:,j])
             maxv = np.max(self.datas[:,j])
             for i in range(n):
-                vec[i,j] = (self.datas[i,j] - minv)/(maxv - minv)
+                if maxv - minv != 0:
+                    vec[i,j] = (self.datas[i,j] - minv)/(maxv - minv)
+                else:
+                    vec[i, j] = 1
         self.data = np.matrix(vec)
 
     def define_norm_vectors(self):
