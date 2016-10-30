@@ -1,4 +1,3 @@
-__author__ = 'vlad'
 # coding: utf8
 
 import sys
@@ -6,27 +5,27 @@ import sys
 from PyQt5.QtCore import pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QTextDocument, QFont
 from PyQt5.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox
-from PyQt5.uic import loadUiType
 
 from presentation import PolynomialBuilder
 from solve import Solve
+from main_window import Ui_Form
+
 
 app = QApplication(sys.argv)
 app.setApplicationName('lab2_sa')
-form_class, base_class = loadUiType('main_window.ui')
 
 
-class MainWindow(QDialog, form_class):
+
+class MainWindow(QDialog, Ui_Form):
     # signals:
     input_changed = pyqtSignal('QString')
     output_changed = pyqtSignal('QString')
 
-    def __init__(self, *args):
-        super(MainWindow, self).__init__(*args)
+    def __init__(self):
+        super(MainWindow, self).__init__()
 
-        # setting up ui
+        # Set up the user interface from Designer.
         self.setupUi(self)
-
         # other initializations
         self.dimensions = [self.x1_dim.value(), self.x2_dim.value(),
                                     self.x3_dim.value(), self.y_dim.value()]

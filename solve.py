@@ -1,4 +1,3 @@
-__author__ = 'strike'
 from copy import deepcopy
 
 #from scipy import special

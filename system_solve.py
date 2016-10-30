@@ -1,4 +1,3 @@
-__author__ = 'strike'
 import numpy as np
 
 

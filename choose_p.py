@@ -1,4 +1,3 @@
-__author__ = 'strike'
 from solve import *
 
 a= Solve({'samples':50, 'input_file': 'data_2.txt', 'dimensions': [3, 1, 2, 2], 'output_file': '', 'degrees': [3, 3, 3],

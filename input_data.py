@@ -1,4 +1,3 @@
-__author__ = 'strike'
 
 def read_data(filename = 'data_2.txt'):
     f = open(filename, 'r')
